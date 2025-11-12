@@ -1,0 +1,34 @@
+# -------------------------------
+# Python ignores
+# -------------------------------
+__pycache__/
+
+# -------------------------------
+# SLURM / SSH server specifics
+# -------------------------------
+# Ignore SLURM batch scripts and output files
+*.sbatch
+*.slurm
+job.*.out
+job.*.err
+
+# Ignore temporary SSH files or session artifacts
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# -------------------------------
+# Project-specific ignores
+# -------------------------------
+
+models/
+job_outputs/
+
+# -------------------------------
+# System / editor files
+# -------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
