@@ -92,4 +92,4 @@ def update_target_net(policy_net, target_net):
         target Q-network
     """
 
-    policy_net.load_state_dict(target_net.state_dict())
+    target_net.load_state_dict(policy_net.state_dict())
