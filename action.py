@@ -1,5 +1,6 @@
 import random
 import torch
+import numpy as np
 
 def select_greedy_action(state, policy_net, action_size):
     """ Select the greedy action
@@ -39,7 +40,19 @@ def select_exploratory_action(state, policy_net, action_size, exploration, t):
         ID of selected action
     """
 
-    # TODO: Select exploratory action
+    with torch.no_grad():
+        eps = exploration.value(t)
+        sample = random.uniform(0,1)
+        
+        if sample < eps:
+            # Perform random action
+            return np.random.randint(low=0, high=action_size)
+        else:
+            # Select action greedily
+            q_values = policy_net(state)
+            return torch.argmax(q_values).item()
+
+
 
 
 def get_action ( state, policy_net, action_size, actions = None, exploration = None, t = None, is_greedy = False):

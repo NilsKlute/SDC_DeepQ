@@ -67,6 +67,12 @@ def learn(env,
     else:
         print ("\nNot using CUDA.\n")
 
+    # Set model subfolder
+    subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_explfr{exploration_fraction}_explfeps:{exploration_final_eps}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}"
+    outdir = os.path.join(outdir, subfolder)
+    if not os.path.isdir(outdir):
+        os.mkdir(outdir)
+
     episode_rewards = [0.0]
     training_losses = []
     action_manager = ActionSet()

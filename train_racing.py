@@ -41,7 +41,7 @@ def main ():
     parser.add_argument ( '--use_doubleqlearning', default=False, action="store_true", help='a flag that indicates the use of double q learning' )
     parser.add_argument ( '--no_display', default=False, action="store_true", help='a flag indicating whether training runs on the cluster' )
     parser.add_argument ( '--agent_name', type=str, default='agent', help='an agent name' )
-    parser.add_argument ( '--outdir', type=str, default='', help='a directory for output' )
+    parser.add_argument ( '--outdir', type=str, default='models', help='a directory for output' )
 
     args = parser.parse_args()
 

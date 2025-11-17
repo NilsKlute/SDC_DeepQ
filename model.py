@@ -17,7 +17,26 @@ class DQN(nn.Module):
         self.device = device 
         self.action_size = action_size
 
-        # TODO: Create network
+        # 3x96x96 --> 8x48x48
+        self.conv1 = nn.Sequential(nn.Conv2d(3, 8, 3, padding=1),
+                                   nn.LeakyReLU(negative_slope=0.2),
+                                   nn.MaxPool2d(2))
+        
+        # 8x48x48 --> 16x24x24
+        self.conv2 = nn.Sequential(nn.Conv2d(8, 16, 3, padding=1),
+                                   nn.LeakyReLU(negative_slope=0.2),
+                                   nn.MaxPool2d(2))
+        
+        # 16x24x24 --> 32x12x12
+        self.conv3 = nn.Sequential(nn.Conv2d(16, 32, 3, padding=1),
+                                   nn.LeakyReLU(negative_slope=0.2),
+                                   nn.MaxPool2d(2))
+        
+        self.lin1 = nn.Sequential(nn.Linear(32*12*12 + 7, 1024),
+                                  nn.LeakyReLU(negative_slope=0.2))
+        
+        self.lin2 = nn.Sequential(nn.Linear(1024, action_size))
+        
 
     def forward(self, observation):
         """ Forward pass to compute Q-values
@@ -30,8 +49,25 @@ class DQN(nn.Module):
         torch.Tensor
             Q-values  
         """
+        observation = torch.Tensor(observation).to(self.device)
+        batch_size = observation.shape[0]
 
-        # TODO: Forward pass through the network
+        speed, abs_sensors, steering, gyroscope = self.extract_sensor_values(observation, batch_size)
+        sensor_values = torch.cat((speed, abs_sensors, steering, gyroscope), dim=1) # Resulting shape: (batchsize, 7)
+
+        x = torch.permute(observation, (0, 3, 1, 2))
+
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+
+        x = torch.cat((torch.flatten(x, start_dim=1), sensor_values), dim=1)
+
+        x = self.lin1(x)
+        q_values = self.lin2(x)
+
+        return q_values
+
 
     def extract_sensor_values(self, observation, batch_size):
         """ Extract numeric sensor values from state pixels. The values are
