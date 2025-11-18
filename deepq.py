@@ -108,6 +108,7 @@ def learn(env,
     obs, _ = env.reset()
     obs = get_state(obs)
     start = time.time()
+    best_mv_avg_reward = float('-inf')
     
     # Iterate over the total number of time steps
     for t in range(total_timesteps):
@@ -150,14 +151,16 @@ def learn(env,
             end = time.time()
             print(f"\n** {t} th timestep - {end - start:.5f} sec passed**\n")
 
-            # Save the trained policy network
+        mv_avg_reward = sum(episode_rewards[-4:]) / 4
+        # Save the trained policy network
+        if len(episode_rewards) >= 4 and mv_avg_reward > best_mv_avg_reward:
             torch.save(policy_net.state_dict(), os.path.join(outdir, model_identifier + '.pth'))
+            best_mv_avg_reward = mv_avg_reward
+            print(f"Saved model with moving average reward: {mv_avg_reward}")
 
     end = time.time()
     print(f"\n** Total {end - start:.5f} sec passed**\n")
 
-    # Save the trained policy network
-    torch.save(policy_net.state_dict(), os.path.join ( outdir, model_identifier+'.pth' ))
 
     # Visualize the training loss and cumulative reward curves
     visualize_training(episode_rewards, training_losses, model_identifier, outdir )

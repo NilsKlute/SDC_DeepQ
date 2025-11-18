@@ -32,10 +32,13 @@ class DQN(nn.Module):
                                    nn.LeakyReLU(negative_slope=0.2),
                                    nn.MaxPool2d(2))
         
-        self.lin1 = nn.Sequential(nn.Linear(32*12*12 + 7, 1024),
+        self.lin1 = nn.Sequential(nn.Linear(32*12*12 + 7, 2048),
                                   nn.LeakyReLU(negative_slope=0.2))
         
-        self.lin2 = nn.Sequential(nn.Linear(1024, action_size))
+        self.lin2 = nn.Sequential(nn.Linear(2048, 1024),
+                                  nn.LeakyReLU(negative_slope=0.2))
+        
+        self.lin3 = nn.Sequential(nn.Linear(1024, action_size))
         
 
     def forward(self, observation):
@@ -64,7 +67,8 @@ class DQN(nn.Module):
         x = torch.cat((torch.flatten(x, start_dim=1), sensor_values), dim=1)
 
         x = self.lin1(x)
-        q_values = self.lin2(x)
+        x = self.lin2(x)
+        q_values = self.lin3(x)
 
         return q_values
 
