@@ -34,6 +34,7 @@ def main ():
     # get args
     parser = argparse.ArgumentParser()
 
+    parser.add_argument ( '--lr', type=float, default=1e-4, help = 'The learning rate' )
     parser.add_argument ( '--total_timesteps', type=int, default=100000, help = 'The number of env steps to take' )
     parser.add_argument ( '--action_repeats', type=int, default=4, help='Update the model every action_repeatss steps' )
     parser.add_argument ( '--gamma', type=float, default=0.99, help='selection action on every n-th frame and repeat action for intermediate frames' )
@@ -67,6 +68,7 @@ def main ():
 
     deepq.learn (
                     env, total_timesteps = args.total_timesteps,
+                    lr=args.lr,
                     action_repeat = args.action_repeats,
                     gamma = args.gamma,
                     model_identifier = args.agent_name,
