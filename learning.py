@@ -77,6 +77,47 @@ def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, bat
         optimizer.step()
 
         return loss.item()
+    
+    else:
+         # Run double Q-learning step
+
+        optimizer.zero_grad()
+
+        # 1. Sample transitions from replay_buffer
+        transitions = replay_buffer.sample(batch_size)
+        obses_t, actions, rewards, obses_tp1, dones = transitions
+
+        # 2. Compute Q(s_t, a)
+        actions = torch.from_numpy(actions).long().to(device)
+        q_values_prediction = policy_net(obses_t).gather(1, actions.unsqueeze(1))
+
+        # 3. Compute \max_a Q(s_{t+1}, a) for all next states.
+        q_values_target_actions = policy_net(obses_tp1).max(dim=1, keepdim=True)[1]
+
+        q_values_target = target_net(obses_tp1).gather(1, q_values_target_actions)
+
+        # 4. Mask next state values where episodes have terminated
+        not_terminated = torch.Tensor(dones).to(device) == 0
+        q_values_prediction = q_values_prediction[not_terminated]
+        q_values_target = q_values_target[not_terminated]
+        rewards = torch.from_numpy(rewards).to(device)[not_terminated]
+
+        # 5. Compute the target
+        target = rewards + gamma * q_values_target
+
+        # 6. Compute the loss
+        loss = 1/torch.sum(not_terminated) * torch.sum(torch.square(target - q_values_prediction))
+
+        # 7. Calculate the gradients
+        loss.backward()
+
+        # 8. Clip the gradients
+        torch.nn.utils.clip_grad_norm_(policy_net.parameters(), 1)
+
+        # 9. Optimize the model
+        optimizer.step()
+
+        return loss.item()
 
 
 
