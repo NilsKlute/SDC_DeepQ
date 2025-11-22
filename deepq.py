@@ -57,6 +57,11 @@ def learn(env,
     model_identifier: string
         identifier of the agent
     """
+    buffer_size = 500_000
+    target_network_update_freq=10_000
+    learning_starts=50_000
+    exploration_fraction=0.5
+    use_doubleqlearning = True
 
     # set float as default
     torch.set_default_dtype (torch.float32)
@@ -67,11 +72,7 @@ def learn(env,
     else:
         print ("\nNot using CUDA.\n")
 
-    # Set model subfolder
-    subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_explfr{exploration_fraction}_explfeps:{exploration_final_eps}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}"
-    outdir = os.path.join(outdir, subfolder)
-    if not os.path.isdir(outdir):
-        os.mkdir(outdir)
+    
 
     episode_rewards = [0.0]
     training_losses = []
@@ -87,6 +88,12 @@ def learn(env,
     print ( action_size )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    # Set model subfolder
+    subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_explfr{exploration_fraction}_explfeps:{exploration_final_eps}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}_dd_q:{use_doubleqlearning}_actionsize:{action_size}_dueling:True"
+    outdir = os.path.join(outdir, subfolder)
+    if not os.path.isdir(outdir):
+        os.mkdir(outdir)
+
     # Build networks
     policy_net = DQN(action_size, device).to(device)
     target_net = DQN(action_size, device).to(device)
@@ -94,7 +101,7 @@ def learn(env,
     target_net.eval()
 
     # Create replay buffer
-    replay_buffer = ReplayBuffer(buffer_size)
+    replay_buffer = ReplayBuffer(buffer_size, gamma, n_step=1)
 
     # Create optimizer
     optimizer = optim.Adam(policy_net.parameters(), lr=lr)

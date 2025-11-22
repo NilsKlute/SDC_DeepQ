@@ -17,28 +17,33 @@ class DQN(nn.Module):
         self.device = device 
         self.action_size = action_size
 
-        # 3x96x96 --> 8x48x48
-        self.conv1 = nn.Sequential(nn.Conv2d(3, 8, 3, padding=1),
-                                   nn.LeakyReLU(negative_slope=0.2),
-                                   nn.MaxPool2d(2))
         
-        # 8x48x48 --> 16x24x24
-        self.conv2 = nn.Sequential(nn.Conv2d(8, 16, 3, padding=1),
-                                   nn.LeakyReLU(negative_slope=0.2),
-                                   nn.MaxPool2d(2))
+        # 3x96x96 --> 32x24x24
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=7, stride=4, padding=3),
+            nn.ReLU()
+        ) 
+
+        # 32x24x24 --> 64×12x12
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+            nn.ReLU()
+        )  
+
+        # 64×12x12 --> 64×6x6
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1),
+            nn.ReLU()
+        )
         
-        # 16x24x24 --> 32x12x12
-        self.conv3 = nn.Sequential(nn.Conv2d(16, 32, 3, padding=1),
-                                   nn.LeakyReLU(negative_slope=0.2),
-                                   nn.MaxPool2d(2))
+
+        self.features = nn.Sequential(nn.Linear(64*6*6 + 7, 512), nn.ReLU())
+
+        self.value = nn.Sequential(nn.Linear(512, 256), nn.ReLU(), nn.Linear(256, 1))
+
+        self.advantage = nn.Sequential(nn.Linear(512, 256), nn.ReLU(), nn.Linear(256, action_size))
+
         
-        self.lin1 = nn.Sequential(nn.Linear(32*12*12 + 7, 2048),
-                                  nn.LeakyReLU(negative_slope=0.2))
-        
-        self.lin2 = nn.Sequential(nn.Linear(2048, 1024),
-                                  nn.LeakyReLU(negative_slope=0.2))
-        
-        self.lin3 = nn.Sequential(nn.Linear(1024, action_size))
         
 
     def forward(self, observation):
@@ -66,9 +71,12 @@ class DQN(nn.Module):
 
         x = torch.cat((torch.flatten(x, start_dim=1), sensor_values), dim=1)
 
-        x = self.lin1(x)
-        x = self.lin2(x)
-        q_values = self.lin3(x)
+        features = self.features(x)
+
+        V = self.value(features)
+        A = self.advantage(features)
+
+        q_values = V + (A - A.mean(dim=1, keepdim=True))
 
         return q_values
 

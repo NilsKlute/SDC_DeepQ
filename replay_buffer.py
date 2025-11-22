@@ -3,7 +3,7 @@ import random
 
 
 class ReplayBuffer(object):
-    def __init__(self, size):
+    def __init__(self, size, gamma, n_step):
         """Create Replay buffer.
         Parameters
         ----------
@@ -14,6 +14,8 @@ class ReplayBuffer(object):
         self._storage = []
         self._maxsize = size
         self._next_idx = 0
+        self._gamma = gamma
+        self._n_step = n_step
 
     def __len__(self):
         return len(self._storage)
@@ -46,11 +48,29 @@ class ReplayBuffer(object):
         for i in idxes:
             data = self._storage[i]
             obs_t, action, reward, obs_tp1, done = data
+
+            returns = 0
+            gamma_step = 1
+            for step in range(self._n_step):
+                if (i + step) % self._maxsize < (i + step):
+                    done = True
+                    break
+
+                transition = self._storage[i + step]
+                _, _, reward, obs_tp1, done = transition
+
+                returns += reward * gamma_step
+
+                if done:
+                    break
+                gamma_step *= self._gamma
+
             obses_t.append(obs_t)
             actions.append(np.array(action, copy=False))
-            rewards.append(reward)
+            rewards.append(returns)
             obses_tp1.append(obs_tp1)
             dones.append(done)
+
         return np.squeeze(np.array(obses_t), axis=1), np.array(actions), np.array(rewards, dtype=np.float32), np.squeeze(np.array(obses_tp1), axis=1), np.array(dones, dtype=np.float32)
 
     def sample(self, batch_size):
