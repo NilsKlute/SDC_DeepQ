@@ -117,7 +117,7 @@ def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, bat
         # 9. Optimize the model
         optimizer.step()
 
-        return loss.item()
+        return loss.detach().item()
 
 
 

@@ -10,7 +10,7 @@ def get_state(state):
     state = np.ascontiguousarray(state, dtype=np.float32) 
     return np.expand_dims(state, axis=0)
 
-def visualize_training(episode_rewards, training_losses, model_identifier, ourdir =""):
+def visualize_training(episode_rewards, training_losses, model_identifier, mean_eval_score, ourdir =""):
     """ Visualize training by creating reward + loss plots
     Parameters
     -------
@@ -26,7 +26,7 @@ def visualize_training(episode_rewards, training_losses, model_identifier, ourdi
     plt.plot(np.array(episode_rewards))
     plt.xlabel("Episode Number")
     plt.ylabel("Rewards per Episode")
-    plt.title("Rewards per Episode over Time")
+    plt.title(f"Rewards per Episode over Time. Mean Evaluation Score: {mean_eval_score:.3f}")
     plt.savefig(os.path.join(ourdir, f"episode_rewards-{model_identifier}.png"), dpi=300)
     plt.close()
 

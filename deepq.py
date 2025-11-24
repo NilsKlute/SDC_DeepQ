@@ -7,6 +7,7 @@ from model import DQN
 from replay_buffer import ReplayBuffer
 from schedule import LinearSchedule
 from utils import get_state, visualize_training
+from evaluate_racing import evaluate
 import os
 import matplotlib
 import time
@@ -58,7 +59,7 @@ def learn(env,
         identifier of the agent
     """
     buffer_size = 100_000
-    target_network_update_freq=1_000
+    target_network_update_freq=500
     learning_starts=1_000
     exploration_fraction=0.2
     use_doubleqlearning = True
@@ -170,6 +171,7 @@ def learn(env,
     print(f"\n** Total {end - start:.5f} sec passed**\n")
 
 
+    mean_eval_score = evaluate(env, new_actions, load_path=os.path.join(outdir, model_identifier + '.pth'))
     # Visualize the training loss and cumulative reward curves
-    visualize_training(episode_rewards, training_losses, model_identifier, outdir )
+    visualize_training(episode_rewards, training_losses, model_identifier, mean_eval_score, outdir)
  
