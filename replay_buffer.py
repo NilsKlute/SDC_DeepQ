@@ -52,7 +52,7 @@ class ReplayBuffer(object):
             returns = 0
             gamma_step = 1
             for step in range(self._n_step):
-                if (i + step) % self._maxsize < (i + step):
+                if (i + step) % len(self._storage) < (i + step):
                     done = True
                     break
 
