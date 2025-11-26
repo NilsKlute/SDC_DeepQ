@@ -2,8 +2,44 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class NoisyLinearLayer(nn.Module):
+    def __init__(self, dim_in, dim_out, device):
+        """Create Noisy Linear Layer
+        Parameters
+        ---------
+        dim_in: int
+            the input dimension
+        dim_out: int
+            the ouptu dimension
+        device: string
+            device on which to the model will be allocated
+        """
+        super().__init__()
+
+        self.dim_in = dim_in
+        self.dim_out = dim_out
+        self.device = device
+
+        self.linear_layer_mean = nn.LinearLayer(dim_in, dim_out)
+        self.linear_layer_sigma_w = torch.Parameter(torch.randn(1,1))
+        self.linear_layer_sigma_b = torch.Parameter(torch.randn(1,1))
+
+    def forward(self, x):
+        mean = self.linear_layer_mean(x)
+
+        noise_factors_in_dim = torch.randn(1, self.dim_in)
+        noise_factors_out_dim = torch.randn(self.dim_out, 1)
+        noise_weights = torch.matmul(noise_factors_out_dim, noise_factors_in_dim)
+        noise_bias = noise_factors_out_dim
+
+        out = mean + torch.matmul(self.linear_layer_sigma_w * noise_weights, x) + self.linear_layer_sigma_b * noise_bias
+
+        return out
+
+
+
 class DQN(nn.Module):
-    def __init__(self, action_size, device):
+    def __init__(self, action_size, device, noisy=False):
         """ Create Q-network
         Parameters
         ----------
@@ -16,6 +52,7 @@ class DQN(nn.Module):
 
         self.device = device 
         self.action_size = action_size
+        self.noisy = noisy
 
         
         # 3x96x96 --> 32x24x24
@@ -35,15 +72,22 @@ class DQN(nn.Module):
             nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1),
             nn.ReLU()
         )
+
+        if noisy:
+            #  noisy net linear layers 
+            self.features =  nn.Sequential(NoisyLinearLayer(64*6*6 + 7, 512), nn.ReLU())
+
+            self.value =  nn.Sequential(NoisyLinearLayer(512, 256), nn.ReLU(), NoisyLinearLayer(256, 1))
+
+            self.advantage =  nn.Sequential(NoisyLinearLayer(512, 256), nn.ReLU(), NoisyLinearLayer(256, action_size))
         
+        else:
+            self.features = nn.Sequential(nn.Linear(64*6*6 + 7, 512), nn.ReLU())
 
-        self.features = nn.Sequential(nn.Linear(64*6*6 + 7, 512), nn.ReLU())
+            self.value = nn.Sequential(nn.Linear(512, 256), nn.ReLU(), nn.Linear(256, 1))
+            
+            self.advantage = nn.Sequential(nn.Linear(512, 256), nn.ReLU(), nn.Linear(256, action_size))
 
-        self.value = nn.Sequential(nn.Linear(512, 256), nn.ReLU(), nn.Linear(256, 1))
-
-        self.advantage = nn.Sequential(nn.Linear(512, 256), nn.ReLU(), nn.Linear(256, action_size))
-
-        
         
 
     def forward(self, observation):

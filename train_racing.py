@@ -40,6 +40,7 @@ def main ():
     parser.add_argument ( '--gamma', type=float, default=0.99, help='selection action on every n-th frame and repeat action for intermediate frames' )
     parser.add_argument ( '--action_filename', type=str, default = 'default_actions.txt', help='a list of actions' )
     parser.add_argument ( '--use_doubleqlearning', default=False, action="store_true", help='a flag that indicates the use of double q learning' )
+    parser.add_argument ( '--noisy', default=False, action="store_true", help='a flag that indicates the use of noisy linear layers' )
     parser.add_argument ( '--no_display', default=False, action="store_true", help='a flag indicating whether training runs on the cluster' )
     parser.add_argument ( '--agent_name', type=str, default='agent', help='an agent name' )
     parser.add_argument ( '--outdir', type=str, default='models', help='a directory for output' )

@@ -68,6 +68,8 @@ def evaluate(env, new_actions = None, load_path='agent.pth'):
     print(' std score: %f' % np.std(np.array(episode_rewards)))
     print('---------------------------')
 
+    return np.mean(np.array(episode_rewards))
+
 def load_actions ( action_filename ):
 
     actions = []

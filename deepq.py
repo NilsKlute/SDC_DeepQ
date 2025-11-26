@@ -27,7 +27,8 @@ def learn(env,
           new_actions = None,
           model_identifier='agent',
           outdir = "",
-          use_doubleqlearning = False):
+          use_doubleqlearning = False,
+          noisy=False):
     """ Train a deep q-learning model.
     Parameters
     -------
@@ -59,11 +60,12 @@ def learn(env,
         identifier of the agent
     """
     buffer_size = 100_000
-    target_network_update_freq=500
+    target_network_update_freq=2000
     learning_starts=1_000
     exploration_fraction=0.2
     use_doubleqlearning = True
     n_step = 3
+    exploration_final_eps=0.08
 
     # set float as default
     torch.set_default_dtype (torch.float32)
@@ -97,8 +99,8 @@ def learn(env,
         os.mkdir(outdir)
 
     # Build networks
-    policy_net = DQN(action_size, device).to(device)
-    target_net = DQN(action_size, device).to(device)
+    policy_net = DQN(action_size, device, noisy).to(device)
+    target_net = DQN(action_size, device, noisy).to(device)
     target_net.load_state_dict(policy_net.state_dict())
     target_net.eval()
 
@@ -118,12 +120,14 @@ def learn(env,
     obs = get_state(obs)
     start = time.time()
     best_mv_avg_reward = float('-inf')
+
+    is_greedy = True if noisy else False
     
     # Iterate over the total number of time steps
     for t in range(total_timesteps):
 
         # Select action
-        env_action, action_id = get_action ( obs, policy_net, action_size, actions, exploration, t, is_greedy=False )
+        env_action, action_id = get_action ( obs, policy_net, action_size, actions, exploration, t, is_greedy=is_greedy)
 
         # TODO: if you want to implement the network associated with the continuous action set or the prioritized replay buffer, you need to reimplement the replay buffer.
 
