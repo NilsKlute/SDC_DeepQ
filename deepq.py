@@ -93,7 +93,10 @@ def learn(env,
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Set model subfolder
-    subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_explfr{exploration_fraction}_explfeps:{exploration_final_eps}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}_dd_q:{use_doubleqlearning}_actionsize:{action_size}_n_step:{n_step}dueling:True"
+    if noisy:
+        subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}_dd_q:{use_doubleqlearning}_actionsize:{action_size}_n_step:{n_step}_dueling:True_noisy:True"
+    else:
+        subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_explfr{exploration_fraction}_explfeps:{exploration_final_eps}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}_dd_q:{use_doubleqlearning}_actionsize:{action_size}_n_step:{n_step}_dueling:True_noisy:False"
     outdir = os.path.join(outdir, subfolder)
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
