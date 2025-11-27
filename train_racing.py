@@ -75,7 +75,8 @@ def main ():
                     model_identifier = args.agent_name,
                     outdir= args.outdir,
                     new_actions = actions,
-                    use_doubleqlearning = args.use_doubleqlearning
+                    use_doubleqlearning = args.use_doubleqlearning,
+                    noisy = args.noisy
                 )
     
     # wrap up

@@ -60,12 +60,10 @@ def learn(env,
         identifier of the agent
     """
     buffer_size = 100_000
-    target_network_update_freq=2000
+    target_network_update_freq=500
     learning_starts=1_000
-    exploration_fraction=0.2
     use_doubleqlearning = True
     n_step = 3
-    exploration_final_eps=0.08
 
     # set float as default
     torch.set_default_dtype (torch.float32)
@@ -97,7 +95,7 @@ def learn(env,
         subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}_dd_q:{use_doubleqlearning}_actionsize:{action_size}_n_step:{n_step}_dueling:True_noisy:True"
     else:
         subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_explfr{exploration_fraction}_explfeps:{exploration_final_eps}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}_dd_q:{use_doubleqlearning}_actionsize:{action_size}_n_step:{n_step}_dueling:True_noisy:False"
-    outdir = os.path.join(outdir, subfolder)
+    outdir = os.path.join(outdir, "current_experiments", subfolder)
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
 

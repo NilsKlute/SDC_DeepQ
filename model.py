@@ -20,19 +20,19 @@ class NoisyLinearLayer(nn.Module):
         self.dim_out = dim_out
         self.device = device
 
-        self.linear_layer_mean = nn.LinearLayer(dim_in, dim_out)
-        self.linear_layer_sigma_w = torch.Parameter(torch.randn(1,1))
-        self.linear_layer_sigma_b = torch.Parameter(torch.randn(1,1))
+        self.linear_layer_mean = nn.Linear(dim_in, dim_out)
+        self.linear_layer_sigma_w = torch.nn.Parameter(torch.randn(1,1))
+        self.linear_layer_sigma_b = torch.nn.Parameter(torch.randn(1,1))
 
     def forward(self, x):
         mean = self.linear_layer_mean(x)
 
         noise_factors_in_dim = torch.randn(1, self.dim_in)
         noise_factors_out_dim = torch.randn(self.dim_out, 1)
-        noise_weights = torch.matmul(noise_factors_out_dim, noise_factors_in_dim)
-        noise_bias = noise_factors_out_dim
+        noise_weights = torch.matmul(noise_factors_out_dim, noise_factors_in_dim).to(self.device)
+        noise_bias = noise_factors_out_dim.squeeze().to(self.device)
 
-        out = mean + torch.matmul(self.linear_layer_sigma_w * noise_weights, x) + self.linear_layer_sigma_b * noise_bias
+        out = mean + torch.matmul(self.linear_layer_sigma_w * noise_weights, x.T).T + self.linear_layer_sigma_b * noise_bias
 
         return out
 
@@ -75,11 +75,11 @@ class DQN(nn.Module):
 
         if noisy:
             #  noisy net linear layers 
-            self.features =  nn.Sequential(NoisyLinearLayer(64*6*6 + 7, 512), nn.ReLU())
+            self.features =  nn.Sequential(NoisyLinearLayer(64*6*6 + 7, 512, device), nn.ReLU())
 
-            self.value =  nn.Sequential(NoisyLinearLayer(512, 256), nn.ReLU(), NoisyLinearLayer(256, 1))
+            self.value =  nn.Sequential(NoisyLinearLayer(512, 256, device), nn.ReLU(), NoisyLinearLayer(256, 1, device))
 
-            self.advantage =  nn.Sequential(NoisyLinearLayer(512, 256), nn.ReLU(), NoisyLinearLayer(256, action_size))
+            self.advantage =  nn.Sequential(NoisyLinearLayer(512, 256, device), nn.ReLU(), NoisyLinearLayer(256, action_size, device))
         
         else:
             self.features = nn.Sequential(nn.Linear(64*6*6 + 7, 512), nn.ReLU())
