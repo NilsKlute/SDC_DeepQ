@@ -1,40 +1,55 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
 class NoisyLinearLayer(nn.Module):
-    def __init__(self, dim_in, dim_out, device):
-        """Create Noisy Linear Layer
-        Parameters
-        ---------
-        dim_in: int
-            the input dimension
-        dim_out: int
-            the ouptu dimension
-        device: string
-            device on which to the model will be allocated
+    def __init__(self, in_features, out_features, sigma0=0.5):
+        """Factorised Noisy Linear layer (Fortunato et al.).
+        in_features: input dim
+        out_features: output dim
+        sigma0: initial sigma scaling (paper used 0.5)
         """
         super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.sigma0 = sigma0
 
-        self.dim_in = dim_in
-        self.dim_out = dim_out
-        self.device = device
+        # weight / bias means
+        self.mu_weight = nn.Parameter(torch.empty(out_features, in_features))
+        self.mu_bias = nn.Parameter(torch.empty(out_features))
 
-        self.linear_layer_mean = nn.Linear(dim_in, dim_out)
-        self.linear_layer_sigma_w = torch.nn.Parameter(torch.randn(1,1))
-        self.linear_layer_sigma_b = torch.nn.Parameter(torch.randn(1,1))
+        # weight / bias sigmas (learnable)
+        self.sigma_weight = nn.Parameter(torch.empty(out_features, in_features))
+        self.sigma_bias = nn.Parameter(torch.empty(out_features))
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        bound = 2.0 / math.sqrt(self.in_features)
+        nn.init.uniform_(self.mu_weight, -bound, bound)
+        nn.init.uniform_(self.mu_bias, -bound, bound)
+        # initialize sigma to sigma0 / sqrt(in)
+        self.sigma_weight.data.fill_(self.sigma0 / math.sqrt(self.in_features))
+        self.sigma_bias.data.fill_(self.sigma0 / math.sqrt(self.out_features))
+
+    def _scaled_noise(self, size):
+        x = torch.randn(size, device=self.mu_weight.device)
+        return x.sign().mul(x.abs().sqrt())
 
     def forward(self, x):
-        mean = self.linear_layer_mean(x)
-
-        noise_factors_in_dim = torch.randn(1, self.dim_in)
-        noise_factors_out_dim = torch.randn(self.dim_out, 1)
-        noise_weights = torch.matmul(noise_factors_out_dim, noise_factors_in_dim).to(self.device)
-        noise_bias = noise_factors_out_dim.squeeze().to(self.device)
-
-        out = mean + torch.matmul(self.linear_layer_sigma_w * noise_weights, x.T).T + self.linear_layer_sigma_b * noise_bias
-
-        return out
+        if self.training:
+            eps_in = self._scaled_noise(self.in_features)   # (in,)
+            eps_out = self._scaled_noise(self.out_features) # (out,)
+            # factorised outer product
+            eps_w = torch.outer(eps_out, eps_in)            # (out, in)
+            eps_b = eps_out                                # (out,)
+            weight = self.mu_weight + self.sigma_weight * eps_w
+            bias = self.mu_bias + self.sigma_bias * eps_b
+        else:
+            weight = self.mu_weight
+            bias = self.mu_bias
+        return F.linear(x, weight, bias)
 
 
 
@@ -75,11 +90,11 @@ class DQN(nn.Module):
 
         if noisy:
             #  noisy net linear layers 
-            self.features =  nn.Sequential(NoisyLinearLayer(64*6*6 + 7, 512, device), nn.ReLU())
+            self.features =  nn.Sequential(NoisyLinearLayer(64*6*6 + 7, 512), nn.ReLU())
 
-            self.value =  nn.Sequential(NoisyLinearLayer(512, 256, device), nn.ReLU(), NoisyLinearLayer(256, 1, device))
+            self.value =  nn.Sequential(NoisyLinearLayer(512, 256), nn.ReLU(), NoisyLinearLayer(256, 1))
 
-            self.advantage =  nn.Sequential(NoisyLinearLayer(512, 256, device), nn.ReLU(), NoisyLinearLayer(256, action_size, device))
+            self.advantage =  nn.Sequential(NoisyLinearLayer(512, 256), nn.ReLU(), NoisyLinearLayer(256, action_size))
         
         else:
             self.features = nn.Sequential(nn.Linear(64*6*6 + 7, 512), nn.ReLU())

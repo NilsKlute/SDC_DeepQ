@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, batch_size, gamma, device, use_doubleqlearning=False):
+def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, batch_size, gamma, device, t, use_doubleqlearning=False):
     """ Perform a deep Q-learning step
     Parameters
     -------
@@ -95,7 +95,10 @@ def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, bat
         q_values_target_actions = policy_net(obses_tp1).max(dim=1, keepdim=True)[1]
 
         q_values_target = target_net(obses_tp1).gather(1, q_values_target_actions)
-
+        # Optional: track Q-values for monitoring
+        if t % 1000 == 0:
+            print(f"Q-values - Min: {q_values_target.min().item():.4f}, Max: {q_values_target.max().item():.4f}, Mean: {q_values_target.mean().item():.4f}")
+            
         # 4. Mask next state values where episodes have terminated
         not_terminated = torch.Tensor(dones).to(device) == 0
         q_values_prediction = q_values_prediction[not_terminated]

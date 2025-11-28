@@ -12,6 +12,23 @@ import os
 import matplotlib
 import time
 
+def log_sigma_stats(policy_net, timestep):
+    """Log sigma parameter statistics for noisy layers."""
+    sigma_weights = []
+    sigma_biases = []
+    
+    for name, param in policy_net.named_parameters():
+        if 'sigma' in name:
+            if 'weight' in name:
+                sigma_weights.append(param.data.abs().mean().item())
+            elif 'bias' in name:
+                sigma_biases.append(param.data.abs().mean().item())
+    
+    if sigma_weights:
+        avg_sigma_w = sum(sigma_weights) / len(sigma_weights)
+        avg_sigma_b = sum(sigma_biases) / len(sigma_biases)
+        print(f"[{timestep}] Sigma Weight Mean: {avg_sigma_w:.6f}, Sigma Bias Mean: {avg_sigma_b:.6f}")
+
 def learn(env,
           lr=1e-4,
           total_timesteps = 100000,
@@ -59,11 +76,13 @@ def learn(env,
     model_identifier: string
         identifier of the agent
     """
-    buffer_size = 100_000
-    target_network_update_freq=500
-    learning_starts=1_000
+    buffer_size = 200_000
+    target_network_update_freq=2000
+    learning_starts=3_000
     use_doubleqlearning = True
-    n_step = 3
+    n_step = 4
+    train_freq=2
+    
 
     # set float as default
     torch.set_default_dtype (torch.float32)
@@ -154,8 +173,13 @@ def learn(env,
 
         if t > learning_starts and t % train_freq == 0:
             # Minimize the error in Bellman's equation on a batch sampled from replay buffer.
-            loss = perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, batch_size, gamma, device, use_doubleqlearning)
+            loss = perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, batch_size, gamma, device, t, use_doubleqlearning)
             training_losses.append(loss)
+
+            # Log sigma stats every 1000 steps if using noisy net
+            if noisy and t % 1000 == 0:
+                log_sigma_stats(policy_net, t)
+            
 
         if t > learning_starts and t % target_network_update_freq == 0:
             # Update target network periodically.
@@ -165,9 +189,9 @@ def learn(env,
             end = time.time()
             print(f"\n** {t} th timestep - {end - start:.5f} sec passed**\n")
 
-        mv_avg_reward = sum(episode_rewards[-4:]) / 4
+        mv_avg_reward = sum(episode_rewards[-10:]) / 10
         # Save the trained policy network
-        if len(episode_rewards) >= 4 and mv_avg_reward > best_mv_avg_reward:
+        if len(episode_rewards) >= 10 and mv_avg_reward > best_mv_avg_reward:
             torch.save(policy_net.state_dict(), os.path.join(outdir, model_identifier + '.pth'))
             best_mv_avg_reward = mv_avg_reward
             print(f"Saved model with moving average reward: {mv_avg_reward}")
