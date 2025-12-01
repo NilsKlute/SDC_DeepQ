@@ -67,7 +67,8 @@ def learn(env,
           model_identifier='agent',
           outdir = "",
           use_doubleqlearning = False,
-          noisy=False):
+          noisy=False,
+          exp_number=1):
     """ Train a deep q-learning model.
     Parameters
     -------
@@ -102,7 +103,6 @@ def learn(env,
     target_network_update_freq=4000
     learning_starts=10_000
     use_doubleqlearning = True
-    exp_number = 8
     n_step = 3
     train_freq=1
     print ( "buffersize:              {0}".format ( buffer_size ) )

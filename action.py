@@ -19,8 +19,9 @@ def select_greedy_action(state, policy_net, action_size):
     """
 
     # TODO: Select greedy action
-    q_values = policy_net(state)
-    return torch.argmax(q_values).item()
+    with torch.no_grad():
+        q_values = policy_net(state)
+        return torch.argmax(q_values).item()
 
 def select_exploratory_action(state, policy_net, action_size, exploration, t):
     """ Select an action according to an epsilon-greedy exploration strategy
