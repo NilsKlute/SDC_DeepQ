@@ -115,7 +115,7 @@ def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, bat
         loss.backward()
 
         # 8. Clip the gradients
-        torch.nn.utils.clip_grad_norm_(policy_net.parameters(), 1)
+        torch.nn.utils.clip_grad_norm_(policy_net.parameters(), 10)
 
         # 9. Optimize the model
         optimizer.step()

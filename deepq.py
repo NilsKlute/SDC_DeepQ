@@ -11,6 +11,8 @@ from evaluate_racing import evaluate
 import os
 import matplotlib
 import time
+import signal
+import time
 
 def log_sigma_stats(policy_net, timestep):
     """Log sigma parameter statistics for noisy layers."""
@@ -28,6 +30,26 @@ def log_sigma_stats(policy_net, timestep):
         avg_sigma_w = sum(sigma_weights) / len(sigma_weights)
         avg_sigma_b = sum(sigma_biases) / len(sigma_biases)
         print(f"[{timestep}] Sigma Weight Mean: {avg_sigma_w:.6f}, Sigma Bias Mean: {avg_sigma_b:.6f}")
+
+class StepTimeout(Exception):
+    pass
+
+def handler(signum, frame):
+    raise StepTimeout()
+
+signal.signal(signal.SIGALRM, handler)
+
+def safe_step(env, env_action, timeout=1):
+    signal.alarm(timeout)
+    try:
+        new_obs, rew, term, trunc, _ = env.step(env_action)
+    except StepTimeout:
+        print("env.step() timeout; resetting env")
+        obs, _ = env.reset()
+        return obs, 0.0, True, True, {}
+    finally:
+        signal.alarm(0)
+    return new_obs, rew, term, trunc, _
 
 def learn(env,
           lr=1e-4,
@@ -76,12 +98,17 @@ def learn(env,
     model_identifier: string
         identifier of the agent
     """
-    buffer_size = 200_000
-    target_network_update_freq=2000
-    learning_starts=3_000
+    buffer_size = 500_000
+    target_network_update_freq=4000
+    learning_starts=10_000
     use_doubleqlearning = True
-    n_step = 4
-    train_freq=2
+    exp_number = 8
+    n_step = 3
+    train_freq=1
+    print ( "buffersize:              {0}".format ( buffer_size ) )
+    print ( "target_network_update_freq:              {0}".format (target_network_update_freq ) )
+    print ( "n_step:              {0}".format ( n_step ) )
+    print ( "train_freq:              {0}".format ( train_freq ) )
     
 
     # set float as default
@@ -111,7 +138,7 @@ def learn(env,
 
     # Set model subfolder
     if noisy:
-        subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}_dd_q:{use_doubleqlearning}_actionsize:{action_size}_n_step:{n_step}_dueling:True_noisy:True"
+        subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}_dd_q:{use_doubleqlearning}_actionsize:{action_size}_n_step:{n_step}_dueling:True_noisy:True_exp_num:{exp_number}"
     else:
         subfolder = f"lr:{lr}_totts:{total_timesteps}_bufsz:{buffer_size}_explfr{exploration_fraction}_explfeps:{exploration_final_eps}_trainfreq:{train_freq}_actionrep:{action_repeat}_bs:{batch_size}_gamma:{gamma}_tnupdate:{target_network_update_freq}_dd_q:{use_doubleqlearning}_actionsize:{action_size}_n_step:{n_step}_dueling:True_noisy:False"
     outdir = os.path.join(outdir, "current_experiments", subfolder)
@@ -128,7 +155,7 @@ def learn(env,
     replay_buffer = ReplayBuffer(buffer_size, gamma, n_step=n_step)
 
     # Create optimizer
-    optimizer = optim.Adam(policy_net.parameters(), lr=lr)
+    optimizer = optim.Adam(policy_net.parameters(), lr=lr, eps=1.5e-4)
 
     # Create the schedule for exploration starting from 1.
     exploration = LinearSchedule(schedule_timesteps=int(exploration_fraction * total_timesteps),
@@ -153,7 +180,7 @@ def learn(env,
 
         # Perform action fram_skip-times
         for f in range(action_repeat):
-            new_obs, rew, term, trunc, _ = env.step(env_action)
+            new_obs, rew, term, trunc, _ = safe_step(env, env_action)
             done = term or trunc
             episode_rewards[-1] += rew
             if done:
