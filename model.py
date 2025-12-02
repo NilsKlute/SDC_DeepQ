@@ -54,7 +54,7 @@ class NoisyLinearLayer(nn.Module):
 
 
 class DQN(nn.Module):
-    def __init__(self, action_size, device, noisy=False):
+    def __init__(self, action_size, device, noisy=True):
         """ Create Q-network
         Parameters
         ----------

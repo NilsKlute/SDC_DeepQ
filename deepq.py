@@ -13,6 +13,7 @@ import matplotlib
 import time
 import signal
 import time
+import gc
 
 def log_sigma_stats(policy_net, timestep):
     """Log sigma parameter statistics for noisy layers."""
@@ -48,7 +49,10 @@ def safe_step(env, env_action, timeout=1):
         obs, _ = env.reset()
         return obs, 0.0, True, True, {}
     finally:
-        signal.alarm(0)
+        try:
+            signal.alarm(0)
+        except StepTimeout:
+            pass
     return new_obs, rew, term, trunc, _
 
 def learn(env,
@@ -215,6 +219,13 @@ def learn(env,
         if t % 1000 == 0:
             end = time.time()
             print(f"\n** {t} th timestep - {end - start:.5f} sec passed**\n")
+
+            print(torch.cuda.memory_allocated()/1024**2, "MB allocated")
+            print(torch.cuda.memory_reserved()/1024**2, "MB reserved")
+            print(torch.cuda.memory_summary())
+            gc.collect()
+            tensors = [o for o in gc.get_objects() if torch.is_tensor(o)]
+            print(len(tensors), tensors[:5])
 
         mv_avg_reward = sum(episode_rewards[-10:]) / 10
         # Save the trained policy network

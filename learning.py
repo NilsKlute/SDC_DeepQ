@@ -92,9 +92,10 @@ def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, bat
         q_values_prediction = policy_net(obses_t).gather(1, actions.unsqueeze(1))
 
         # 3. Compute \max_a Q(s_{t+1}, a) for all next states.
-        q_values_target_actions = policy_net(obses_tp1).max(dim=1, keepdim=True)[1]
+        with torch.no_grad():
+            q_values_target_actions = policy_net(obses_tp1).max(dim=1, keepdim=True)[1]
+            q_values_target = target_net(obses_tp1).gather(1, q_values_target_actions)
 
-        q_values_target = target_net(obses_tp1).gather(1, q_values_target_actions)
         # Optional: track Q-values for monitoring
         if t % 1000 == 0:
             print(f"Q-values - Min: {q_values_target.min().item():.4f}, Max: {q_values_target.max().item():.4f}, Mean: {q_values_target.mean().item():.4f}")
@@ -105,11 +106,14 @@ def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, bat
         q_values_target = q_values_target[not_terminated]
         rewards = torch.from_numpy(rewards).to(device)[not_terminated]
 
+        if q_values_prediction.numel() == 0:
+            return 0.0
+
         # 5. Compute the target
         target = rewards + gamma * q_values_target
 
         # 6. Compute the loss
-        loss = 1/torch.sum(not_terminated) * torch.sum(torch.square(target - q_values_prediction))
+        loss = torch.mean((target - q_values_prediction) ** 2)
 
         # 7. Calculate the gradients
         loss.backward()
@@ -120,7 +124,7 @@ def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, bat
         # 9. Optimize the model
         optimizer.step()
 
-        return loss.detach().cpu().item()
+        return float(loss.detach().cpu().item())
 
 
 
