@@ -13,6 +13,8 @@ import matplotlib
 import time
 import signal
 import time
+from sdc_wrapper import SDC_Wrapper
+import gymnasium as gym
 import gc
 
 def log_sigma_stats(policy_net, timestep):
@@ -46,7 +48,9 @@ def safe_step(env, env_action, timeout=1):
         new_obs, rew, term, trunc, _ = env.step(env_action)
     except StepTimeout:
         print("env.step() timeout; resetting env")
+        env = SDC_Wrapper(gym.make('CarRacing-v2', render_mode='rgb_array'), remove_score=True, return_linear_velocity=False)
         obs, _ = env.reset()
+        print("reset sucessful")
         return obs, 0.0, True, True, {}
     finally:
         try:
@@ -104,7 +108,7 @@ def learn(env,
         identifier of the agent
     """
     buffer_size = 500_000
-    target_network_update_freq=4000
+    target_network_update_freq=750
     learning_starts=10_000
     use_doubleqlearning = True
     n_step = 3
@@ -206,26 +210,27 @@ def learn(env,
             # Minimize the error in Bellman's equation on a batch sampled from replay buffer.
             loss = perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, batch_size, gamma, device, t, use_doubleqlearning)
             training_losses.append(loss)
+            
 
             # Log sigma stats every 1000 steps if using noisy net
             if noisy and t % 1000 == 0:
                 log_sigma_stats(policy_net, t)
+                tensors = [o for o in gc.get_objects() if torch.is_tensor(o)]
+                print(t, len(tensors))
+                del tensors
             
 
         if t > learning_starts and t % target_network_update_freq == 0:
             # Update target network periodically.
             update_target_net(policy_net, target_net)
+        
+        
 
         if t % 1000 == 0:
             end = time.time()
             print(f"\n** {t} th timestep - {end - start:.5f} sec passed**\n")
 
-            print(torch.cuda.memory_allocated()/1024**2, "MB allocated")
-            print(torch.cuda.memory_reserved()/1024**2, "MB reserved")
-            print(torch.cuda.memory_summary())
-            gc.collect()
-            tensors = [o for o in gc.get_objects() if torch.is_tensor(o)]
-            print(len(tensors), tensors[:5])
+            
 
         mv_avg_reward = sum(episode_rewards[-10:]) / 10
         # Save the trained policy network
