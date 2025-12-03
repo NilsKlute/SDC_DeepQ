@@ -50,22 +50,26 @@ def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, bat
 
         # 2. Compute Q(s_t, a)
         actions = torch.from_numpy(actions).long().to(device)
+        obses_t = torch.from_numpy(obses_t).float().to(device)
+        obses_tp1 = torch.from_numpy(obses_tp1).float().to(device)
         q_values_prediction = policy_net(obses_t).gather(1, actions.unsqueeze(1))
 
         # 3. Compute \max_a Q(s_{t+1}, a) for all next states.
         q_values_target = target_net(obses_tp1).max(dim=1, keepdim=True)[0]
 
         # 4. Mask next state values where episodes have terminated
-        not_terminated = torch.Tensor(dones).to(device) == 0
-        q_values_prediction = q_values_prediction[not_terminated]
-        q_values_target = q_values_target[not_terminated]
-        rewards = torch.from_numpy(rewards).to(device)[not_terminated]
+        # Convert numpy
+        dones   = torch.from_numpy(dones).float().to(device)      # shape: (batch,)
+        rewards = torch.from_numpy(rewards).float().to(device)    # shape: (batch,)
+        q_values_target = q_values_target.squeeze(1)
+        # Apply terminal correction
+        q_values_target = q_values_target * (1.0 - dones)
 
         # 5. Compute the target
         target = rewards + gamma * q_values_target
 
         # 6. Compute the loss
-        loss = 1/torch.sum(not_terminated) * torch.sum(torch.square(target - q_values_prediction))
+        loss = torch.mean((target - q_values_prediction)**2)
 
         # 7. Calculate the gradients
         loss.backward()
@@ -88,32 +92,29 @@ def perform_qlearning_step(policy_net, target_net, optimizer, replay_buffer, bat
         obses_t, actions, rewards, obses_tp1, dones = transitions
 
         # 2. Compute Q(s_t, a)
-        actions = torch.from_numpy(actions).long().to(device)
-        q_values_prediction = policy_net(obses_t).gather(1, actions.unsqueeze(1))
+        actions   = torch.from_numpy(actions).long().to(device)
+        rewards   = torch.from_numpy(rewards).float().to(device)
+        dones     = torch.from_numpy(dones).float().to(device)
 
-        # 3. Compute \max_a Q(s_{t+1}, a) for all next states.
+        # Q(s, a) prediction
+        q_values_prediction = policy_net(obses_t).gather(1, actions.unsqueeze(1)).squeeze(1)
+
+        # Double-DQN target
         with torch.no_grad():
-            q_values_target_actions = policy_net(obses_tp1).max(dim=1, keepdim=True)[1]
-            q_values_target = target_net(obses_tp1).gather(1, q_values_target_actions)
+            # action selection using policy net
+            next_actions = policy_net(obses_tp1).argmax(dim=1, keepdim=True)
 
-        # Optional: track Q-values for monitoring
-        if t % 1000 == 0:
-            print(f"Q-values - Min: {q_values_target.min().item():.4f}, Max: {q_values_target.max().item():.4f}, Mean: {q_values_target.mean().item():.4f}")
-            
-        # 4. Mask next state values where episodes have terminated
-        not_terminated = torch.Tensor(dones).to(device) == 0
-        q_values_prediction = q_values_prediction[not_terminated]
-        q_values_target = q_values_target[not_terminated]
-        rewards = torch.from_numpy(rewards).to(device)[not_terminated]
+            # action evaluation using target net
+            q_values_target = target_net(obses_tp1).gather(1, next_actions).squeeze(1)
 
-        if q_values_prediction.numel() == 0:
-            return 0.0
+        # Zero-out next-state values for terminals
+        q_values_target = q_values_target * (1.0 - dones)
 
-        # 5. Compute the target
+        # Final Bellman target
         target = rewards + gamma * q_values_target
 
-        # 6. Compute the loss
-        loss = torch.mean((target - q_values_prediction) ** 2)
+        # MSE loss
+        loss = torch.mean((q_values_prediction - target) ** 2)
 
         # 7. Calculate the gradients
         loss.backward()

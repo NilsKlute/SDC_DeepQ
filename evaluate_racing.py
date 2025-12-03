@@ -36,7 +36,7 @@ def evaluate(env, new_actions = None, load_path='agent.pth'):
              49636746, 66759182, 91294619, 84274995, 31531469]
 
     # Build & load network
-    policy_net = DQN(action_size, device, noisy=True).to(device)
+    policy_net = DQN(action_size, device, noisy=False).to(device)
     checkpoint = torch.load(load_path, map_location=device)
     policy_net.load_state_dict(checkpoint)
     policy_net.eval()

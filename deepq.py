@@ -107,11 +107,11 @@ def learn(env,
     model_identifier: string
         identifier of the agent
     """
-    buffer_size = 500_000
+    buffer_size = 200_000
     target_network_update_freq=750
     learning_starts=10_000
     use_doubleqlearning = True
-    n_step = 3
+    n_step = 2
     train_freq=1
     print ( "buffersize:              {0}".format ( buffer_size ) )
     print ( "target_network_update_freq:              {0}".format (target_network_update_freq ) )
@@ -196,7 +196,7 @@ def learn(env,
             
         # Store transition in the replay buffer.
         new_obs = get_state(new_obs)
-        replay_buffer.add(obs, action_id, rew, new_obs, float(done))
+        replay_buffer.add(obs.copy(), action_id, rew, new_obs.copy(), int(done))
         obs = new_obs
 
         if done:
