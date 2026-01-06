@@ -22,7 +22,7 @@ job.*.err
 # Project-specific ignores
 # -------------------------------
 
-models/
+ReinforcementLearning/models/
 job_outputs/
 default_actions16.txt
 default_actions8.txt
