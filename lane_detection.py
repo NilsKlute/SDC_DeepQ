@@ -42,7 +42,7 @@ class LaneDetection:
             gray_state_image 65x96x1
 
         '''
-        Image.fromarray(state_image_full).save("/home/stud217/Ex3/SDC_DeepQ/Full_image.png","PNG")
+        #Image.fromarray(state_image_full).save("/home/stud217/Ex3/SDC_DeepQ/Full_image.png","PNG")
 
         mask_grey = np.logical_and.reduce([
             np.isin(state_image_full[:, :, 0], np.arange(90, 108)),
@@ -50,10 +50,10 @@ class LaneDetection:
             np.isin(state_image_full[:, :, 2], np.arange(90, 108)),
         ])
 
-        Image.fromarray((mask_grey * 255).astype(np.uint8)).save("/home/stud217/Ex3/SDC_DeepQ/mask.png","PNG")
+        #Image.fromarray((mask_grey * 255).astype(np.uint8)).save("/home/stud217/Ex3/SDC_DeepQ/mask.png","PNG")
     
         gray_state_image = (mask_grey * 255).astype(np.uint8)
-        gray_state_image = np.expand_dims(gray_state_image, axis=-1)
+        gray_state_image = np.expand_dims(gray_state_image[:self.cut_size], axis=-1)
         return gray_state_image[::-1]
 
 
@@ -83,7 +83,7 @@ class LaneDetection:
         assert gradient_sum.shape == (self.cut_size, 96, 1)
         normalized_gradient_image = ((gradient_sum - np.min(gradient_sum))/(np.max(gradient_sum) - np.min(gradient_sum)) * 255).astype(np.uint8).squeeze()
         gradient_sum_image = Image.fromarray(normalized_gradient_image)
-        gradient_sum_image.save("/home/stud217/Ex3/SDC_DeepQ/Gradient_image.png","PNG")
+        #gradient_sum_image.save("/home/stud217/Ex3/SDC_DeepQ/Gradient_image.png","PNG")
 
         return gradient_sum
 
