@@ -85,17 +85,19 @@ def calculate_score_for_leaderboard(env):
 
         reward_per_episode = 0
         for t in range(600):
-            # lane detection
-            lane1, lane2 = LD_module.lane_detection(s, t)
+            if t > 20:
+                # lane detection
+                lane1, lane2 = LD_module.lane_detection(s, t)
 
-            # waypoint and target_speed prediction
-            waypoints = waypoint_prediction(lane1, lane2, t)
-            target_speed = target_speed_prediction(waypoints, t)
+                # waypoint and target_speed prediction
+                waypoints = waypoint_prediction(lane1, lane2, t)
+                target_speed = target_speed_prediction(waypoints, t)
 
-            # control
-            a[0] = LatC_module.stanley(waypoints, speed, t)
-            a[1], a[2] = LongC_module.control(speed, target_speed, t)
+                # control
+                a[0] = LatC_module.stanley(waypoints, speed, t)
+                a[1], a[2] = LongC_module.control(speed, target_speed, t)
 
+            a = np.array([0.0, 0.5, 0.0])
             # perform step
             s, r, done, trunc, info = env.step(a)
             speed = info['speed']
