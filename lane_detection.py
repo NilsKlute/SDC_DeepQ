@@ -42,30 +42,17 @@ class LaneDetection:
             gray_state_image 65x96x1
 
         '''
-        #Image.fromarray(state_image_full).save("/home/stud217/Ex3/SDC_DeepQ/Full_image.png","PNG")
+        Image.fromarray(state_image_full).save("/home/stud217/Ex3/SDC_DeepQ/Full_image.png","PNG")
 
-        green_mask = np.logical_and.reduce([
-            np.isin(state_image_full[:, :, 0], np.arange(95, 105)),
-            np.isin(state_image_full[:, :, 1], np.arange(165, 255)),
-            np.isin(state_image_full[:, :, 2], np.arange(95, 105)),
-        ])
-
-        grey_mask = np.logical_and.reduce([
+        mask_grey = np.logical_and.reduce([
             np.isin(state_image_full[:, :, 0], np.arange(90, 108)),
             np.isin(state_image_full[:, :, 1], np.arange(0, 165)),
             np.isin(state_image_full[:, :, 2], np.arange(90, 108)),
         ])
 
-        #Image.fromarray((green_mask * 255).astype(np.uint8)).save("/home/stud217/Ex3/SDC_DeepQ/mask.png","PNG")
-        
-        state_image_full[green_mask,:] = np.asarray([255, 255, 255])
-        state_image_full[grey_mask,:] = np.asarray([0, 0, 0])
-
-        #Image.fromarray(state_image_full).save("/home/stud217/Ex3/SDC_DeepQ/Full_converted_image.png","PNG")
-
-        gray_state_image = Image.fromarray(state_image_full).convert('L')
-        #gray_state_image.save("/home/stud217/Ex3/SDC_DeepQ/Grey_image.png","PNG")
-        gray_state_image = np.asarray(gray_state_image)[:self.cut_size, :]
+        Image.fromarray((mask_grey * 255).astype(np.uint8)).save("/home/stud217/Ex3/SDC_DeepQ/mask.png","PNG")
+    
+        gray_state_image = (mask_grey * 255).astype(np.uint8)
         gray_state_image = np.expand_dims(gray_state_image, axis=-1)
         return gray_state_image[::-1]
 
@@ -96,7 +83,7 @@ class LaneDetection:
         assert gradient_sum.shape == (self.cut_size, 96, 1)
         normalized_gradient_image = ((gradient_sum - np.min(gradient_sum))/(np.max(gradient_sum) - np.min(gradient_sum)) * 255).astype(np.uint8).squeeze()
         gradient_sum_image = Image.fromarray(normalized_gradient_image)
-        #gradient_sum_image.save("/home/stud217/Ex3/SDC_DeepQ/Gradient_image.png","PNG")
+        gradient_sum_image.save("/home/stud217/Ex3/SDC_DeepQ/Gradient_image.png","PNG")
 
         return gradient_sum
 
@@ -252,13 +239,14 @@ class LaneDetection:
                 has_b1_closest_minima = distance_boundary_1[arg_min_dist_boundary_1] <= distance_boundary_2[arg_min_dist_boundary_2]
 
                 if (has_b1_closest_minima):
-
-                    lane_boundary1_points = np.vstack((lane_boundary1_points, maxima[:, arg_min_dist_boundary_1]))
+                    if distance_boundary_1[arg_min_dist_boundary_1] < 40:
+                        lane_boundary1_points = np.vstack((lane_boundary1_points, maxima[:, arg_min_dist_boundary_1]))
 
                     maxima = np.delete(maxima, arg_min_dist_boundary_1, axis=1)
 
                 else:
-                    lane_boundary2_points = np.vstack((lane_boundary2_points, maxima[:, arg_min_dist_boundary_2]))
+                    if distance_boundary_2[arg_min_dist_boundary_2] < 40:
+                        lane_boundary2_points = np.vstack((lane_boundary2_points, maxima[:, arg_min_dist_boundary_2]))
 
                     maxima = np.delete(maxima, arg_min_dist_boundary_2, axis=1)
 
