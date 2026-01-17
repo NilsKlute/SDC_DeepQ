@@ -288,15 +288,24 @@ class LaneDetection:
         '''
         Plot lanes and way points
         '''
+        def _is_valid_spline(spline):
+            return isinstance(spline, (tuple, list)) and len(spline) == 3
+
         # evaluate spline for 6 different spline parameters.
         t = np.linspace(0, 1, 6)
-        lane_boundary1_points_points = np.array(splev(t, self.lane_boundary1_old))
-        lane_boundary2_points_points = np.array(splev(t, self.lane_boundary2_old))
+        lane_boundary1_points_points = None
+        lane_boundary2_points_points = None
+        if _is_valid_spline(self.lane_boundary1_old):
+            lane_boundary1_points_points = np.array(splev(t, self.lane_boundary1_old))
+        if _is_valid_spline(self.lane_boundary2_old):
+            lane_boundary2_points_points = np.array(splev(t, self.lane_boundary2_old))
 
         plt.gcf().clear()
         plt.imshow(state_image_full[::-1])
-        plt.plot(lane_boundary1_points_points[0], lane_boundary1_points_points[1]+96-self.cut_size, linewidth=5, color='orange')
-        plt.plot(lane_boundary2_points_points[0], lane_boundary2_points_points[1]+96-self.cut_size, linewidth=5, color='orange')
+        if lane_boundary1_points_points is not None:
+            plt.plot(lane_boundary1_points_points[0], lane_boundary1_points_points[1]+96-self.cut_size, linewidth=5, color='orange')
+        if lane_boundary2_points_points is not None:
+            plt.plot(lane_boundary2_points_points[0], lane_boundary2_points_points[1]+96-self.cut_size, linewidth=5, color='orange')
         if len(waypoints):
             plt.scatter(waypoints[0], waypoints[1]+96-self.cut_size, color='white')
 

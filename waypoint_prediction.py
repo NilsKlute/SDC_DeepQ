@@ -62,6 +62,13 @@ def waypoint_prediction(roadside1_spline, roadside2_spline, time_step=0, num_way
         parameter_bound_waypoints (default=1)
         waytype (default="smoothed")
     '''
+    def _straight_line():
+        t = np.linspace(0, num_waypoints - 1, num_waypoints)
+        return np.vstack((np.full(num_waypoints, 48.0), t))
+
+    if time_step < 30:
+        return _straight_line()
+
     if way_type == "center":
         ##### TODO #####
      
@@ -87,7 +94,6 @@ def waypoint_prediction(roadside1_spline, roadside2_spline, time_step=0, num_way
         t = np.linspace(0, 1, 6)
 
         # derive roadside points from spline
-        print(roadside1_spline)
         roadside1_points = np.array(splev(t, roadside1_spline))
         roadside2_points = np.array(splev(t, roadside2_spline))
 

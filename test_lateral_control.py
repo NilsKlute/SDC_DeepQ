@@ -74,7 +74,7 @@ while not control_status.quit:
     lane1, lane2 = LD_module.lane_detection(s)
 
     # waypoint and target_speed prediction
-    waypoints = waypoint_prediction(lane1, lane2)
+    waypoints = waypoint_prediction(lane1, lane2, time_step=steps)
     target_speed = target_speed_prediction(waypoints)
 
     # control with constant gas and no braking

@@ -97,7 +97,7 @@ def calculate_score_for_leaderboard(env):
                 a[0] = LatC_module.stanley(waypoints, speed, t)
                 a[1], a[2] = LongC_module.control(speed, target_speed, t)
 
-            a = np.array([0.0, 0.5, 0.0])
+            #a = np.array([0.0, 0.5, 0.0])
             # perform step
             s, r, done, trunc, info = env.step(a)
             speed = info['speed']

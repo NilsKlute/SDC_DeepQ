@@ -41,11 +41,12 @@ class LongitudinalController:
             control (u)
         '''
         
-        # define error from set point target_speed to speed 
+        # define error from set point target_speed to speed
+        speed_error = target_speed - speed
 
         # derive PID elements
-        control = ...
-
+        control = self.KP * speed_error + self.KD * (speed_error - (self.last_error) + self.KI * np.sum(self.speed_history))
+        self.last_error = speed_error
         return control
 
     def control(self, speed, target_speed, time_step=0):
