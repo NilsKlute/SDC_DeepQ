@@ -19,7 +19,7 @@ class LateralController:
     '''
 
 
-    def __init__(self, gain_constant=5, damping_constant=0.6):
+    def __init__(self, gain_constant=3.3, damping_constant=0.6):
 
         self.gain_constant = gain_constant
         self.damping_constant = damping_constant
@@ -47,7 +47,7 @@ class LateralController:
         error_vec = desired_waypoint - car_position
         cross_track_error = np.linalg.norm(error_vec) * np.sign(error_vec[0])
 
-        print('Cross track error:', cross_track_error)
+        #print('Cross track error:', cross_track_error)
 
         # derive stanley control law
         # prevent division by zero by adding as small epsilon

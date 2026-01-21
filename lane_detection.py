@@ -81,8 +81,8 @@ class LaneDetection:
         gradient_sum = gradient_sum * (gradient_sum >= self.gradient_threshold)
 
         assert gradient_sum.shape == (self.cut_size, 96, 1)
-        normalized_gradient_image = ((gradient_sum - np.min(gradient_sum))/(np.max(gradient_sum) - np.min(gradient_sum)) * 255).astype(np.uint8).squeeze()
-        gradient_sum_image = Image.fromarray(normalized_gradient_image)
+        #normalized_gradient_image = ((gradient_sum - np.min(gradient_sum))/(np.max(gradient_sum) - np.min(gradient_sum)) * 255).astype(np.uint8).squeeze()
+        #gradient_sum_image = Image.fromarray(normalized_gradient_image)
         #gradient_sum_image.save("/home/stud217/Ex3/SDC_DeepQ/Gradient_image.png","PNG")
 
         return gradient_sum

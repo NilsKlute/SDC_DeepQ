@@ -13,7 +13,7 @@ class LongitudinalController:
         PID_step()
         control()
     '''
-    def __init__(self, KP=0.01, KI=0.0, KD=0.0):
+    def __init__(self, KP=0.01, KI=0.0, KD=0.01):
         self.last_error = 0
         self.sum_error = 0
         self.last_control = 0
