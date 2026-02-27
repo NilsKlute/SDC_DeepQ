@@ -2,4 +2,4 @@ Team name: The Imitation Game
 Name 1: Nils Klute
 Name 2: Frieder Wizgall
 
-Score after running 'python main.py --score': ---
+Score after running 'python modular_pipeline.py --score': 768.114140

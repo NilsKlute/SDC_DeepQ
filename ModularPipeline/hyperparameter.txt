@@ -1,0 +1,28 @@
+max_speed = 92
+offset_speed = 30
+exp_constant = 6.5
+long KP 0.01
+long KD = 0.01
+lat gain = 4.1
+lat damping_cons = 0.65
+#####
+748
+max_speed = 95
+offset_speed = 30
+exp_constant = 6.5
+long KP 0.01
+long KD = 0.01
+lat gain = 3.5
+lat damping_cons = 0.6
+#####
+764
+
+max_speed = 95
+offset_speed = 30
+exp_constant = 6.5
+long KP 0.01
+long KD = 0.01
+lat gain = 3.3
+lat damping_cons = 0.6
+#####
+768
